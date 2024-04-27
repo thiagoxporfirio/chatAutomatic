@@ -118,67 +118,6 @@ export function Chat() {
 		}
 	};
 
-	<style jsx global>{`
-		.ReactTags__tags {
-			border: 1px solid #ccc;
-			border-radius: 4px;
-			padding: 5px;
-		}
-
-		.ReactTags__tagInput {
-			margin: 4px;
-			padding: 5px;
-			border: 1px solid #ccc;
-			border-radius: 4px;
-		}
-
-		.ReactTags__tagInputField {
-			margin: 0;
-			padding: 7px;
-			border: none;
-			outline: none;
-			font-size: 14px;
-		}
-
-		.ReactTags__selected {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: center;
-			gap: 5px;
-		}
-
-		.ReactTags__tag {
-			display: flex;
-			align-items: center;
-			margin: 0;
-			padding: 5px;
-			background-color: #eff2f7;
-			border: 1px solid #d1d7e2;
-			border-radius: 15px;
-		}
-
-		.ReactTags__remove {
-			background-color: #c2c6dc;
-			border: none;
-			border-radius: 50%;
-			padding: 2px;
-			cursor: pointer;
-			margin-left: 5px;
-		}
-
-		.ReactTags__remove:hover {
-			background-color: #a0a6bf;
-		}
-
-		.ReactTags__remove::after {
-			content: "×";
-			color: white;
-			font-size: 14px;
-			display: inline-block;
-			padding: 0 3px;
-		}
-	`}</style>;
-
 	return (
 		<>
 			<Card className="w-[800px]">
@@ -195,7 +134,6 @@ export function Chat() {
 						className="flex flex-col gap-2 w-full mb-6"
 					>
 						<ReactTags
-							style={{ width: "100%", marginBottom: "16px" }}
 							tags={tags}
 							suggestions={[]}
 							handleDelete={handleDelete}
@@ -204,12 +142,11 @@ export function Chat() {
 							inputFieldPosition="inline"
 							placeholder="Digite as palavras..."
 							classNames={{
-								tags: "ReactTags__tags",
-								tagInput: "ReactTags__tagInput",
-								tagInputField: "ReactTags__tagInputField",
-								selected: "ReactTags__selected",
-								tag: "ReactTags__tag",
-								remove: "ReactTags__remove"
+								tags: "flex flex-wrap gap-1 p-2 border border-gray-300 rounded",
+								tagInput: "flex-1",
+								tag: "bg-blue-500 flex justify-center items-center text-xs text-white rounded px-2 py-1 m-1",
+								remove: "cursor-pointer pl-2 text-white text-xs",
+								tagInputField: "w-full p-1 m-1 border-none text-sm"
 							}}
 						/>
 
