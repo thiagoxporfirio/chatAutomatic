@@ -9,22 +9,53 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { WithContext as ReactTags } from "react-tag-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
 
+
+const KeyCodes = {
+  comma: 188,
+  enter: 13,
+};
+
+const delimiters = [KeyCodes.comma, KeyCodes.enter];
+
 export function Chat() {
-  const [keywords, setKeywords] = useState("");
-  const [selectedStartDate, setSelectedStartDate] = useState(
-    () => new Date().toISOString().split("T")[0]
-  );
-  const [selectedEndDate, setSelectedEndDate] = useState(
-    () => new Date().toISOString().split("T")[0]
-  );
+  const [tags, setTags] = useState(() => {
+    const savedTags = localStorage.getItem("tags");
+    return savedTags ? JSON.parse(savedTags) : [];
+  });
+
+  const [selectedStartDate, setSelectedStartDate] = useState(() => {
+    return (
+      localStorage.getItem("selectedStartDate") ||
+      new Date().toISOString().split("T")[0]
+    );
+  });
+
+  const [selectedEndDate, setSelectedEndDate] = useState(() => {
+    return (
+      localStorage.getItem("selectedEndDate") ||
+      new Date().toISOString().split("T")[0]
+    );
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
 
-  const handleKeywordsChange = (event) => {
-    setKeywords(event.target.value);
+  useEffect(() => {
+    localStorage.setItem("tags", JSON.stringify(tags));
+    localStorage.setItem("selectedStartDate", selectedStartDate);
+    localStorage.setItem("selectedEndDate", selectedEndDate);
+  }, [tags, selectedStartDate, selectedEndDate]);
+
+  const handleDelete = (i) => {
+    setTags(tags.filter((tag, index) => index !== i));
+  };
+
+  const handleAddition = (tag) => {
+    setTags([...tags, tag]);
   };
 
   const handleStartDateChange = (event) => {
@@ -40,11 +71,11 @@ export function Chat() {
     setIsLoading(true);
 
     // Separa as palavras-chave por espaços e remove espaços extras.
-    const keywordsArray = keywords.split(" ").filter((kw) => kw.trim() !== "");
+    const keywords = tags.map((tag) => tag.text);
     const formattedStartDate = selectedStartDate.split("-").join("");
     const formattedEndDate = selectedEndDate.split("-").join("");
 
-	const allResultsPromises = keywordsArray.map(async (keyword) => {
+    const allResultsPromises = keywords.map(async (keyword) => {
       const url = `https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx?filtropalavraschave=${encodeURIComponent(keyword)}&filtrodatainiciosalvar=${formattedStartDate}&filtrodatafimsalvar=${formattedEndDate}&filtrotodosgrupos=True`;
       const response = await fetch(url);
       const text = await response.text();
@@ -87,6 +118,7 @@ export function Chat() {
       console.log("Finished fetching results: ", results);
     }
   };
+
   return (
     <>
       <Card className="w-[800px]">
@@ -99,14 +131,21 @@ export function Chat() {
         </CardHeader>
         <CardContent>
           <form
-            className="flex flex-col gap-2 w-full mb-6"
             onSubmit={handleSubmit}
+            className="flex flex-col gap-2 w-full mb-6"
           >
-            <Input
+            <ReactTags
+              style={{ width: "100%" }}
+              
+              tags={tags}
+              suggestions={[]}
+              handleDelete={handleDelete}
+              handleAddition={handleAddition}
+              delimiters={delimiters}
+              inputFieldPosition="inline"
               placeholder="Digite as palavras que deseja pesquisar"
-              value={keywords}
-              onChange={handleKeywordsChange}
             />
+
             <div className="flex gap-2">
               <Input
                 type="date"
@@ -132,7 +171,7 @@ export function Chat() {
                     <div
                       key={index}
                       style={{
-                        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                        boxShadow: "0 2px 1px rgba(0, 0, 0, 0.1)",
                         borderRadius: "8px",
                         overflow: "hidden",
                         marginBottom: "16px",
