@@ -144,8 +144,8 @@ export function Chat() {
 							classNames={{
 								tags: "flex flex-wrap gap-1 p-2 border border-gray-300 rounded",
 								tagInput: "flex-1",
-								tag: "bg-blue-500 flex justify-center items-center text-xs text-white rounded px-2 py-1 m-1",
-								remove: "cursor-pointer pl-2 text-white text-xs",
+								tag: "bg-blue-400 flex justify-center items-center text-xs text-white rounded px-2 py-1 m-1",
+								remove: "cursor-pointer pl-2 text-white text-sm",
 								tagInputField: "w-full p-1 m-1 border-none text-sm"
 							}}
 						/>
