@@ -80,6 +80,29 @@ export function Chat() {
 		setCurrentPage(pageNumber);
 	};
 
+	const buildCompleteUrl = (startDate, endDate) => {
+		// Formata as datas para o formato AAAAMMDD
+		const formattedStartDate = startDate.split("-").join("");
+		const formattedEndDate = endDate.split("-").join("");
+
+		// Constrói a URL com os parâmetros substituídos
+		const baseUrl =
+			"https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx";
+		const queryParams = new URLSearchParams({
+			filtropalavraschave: tags.map(tag => tag.text).join(","),
+			f: "xhitlist",
+			xhitlist_vpc: "first",
+			xhitlist_x: "Advanced",
+      filtrogrupos: "Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
+			filtrotodosgrupos: "True",
+			filtrodatafimsalvar: formattedEndDate,
+			filtrodatainiciosalvar: formattedStartDate
+		});
+
+		// Retorna a URL completa
+		return `${baseUrl}?${queryParams.toString()}`;
+	};
+
 	const handleSubmit = async event => {
 		event.preventDefault();
 		setIsLoading(true);
@@ -90,7 +113,7 @@ export function Chat() {
 		const formattedEndDate = selectedEndDate.split("-").join("");
 
 		const allResultsPromises = keywords.map(async keyword => {
-			const url = `https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx?filtropalavraschave=${encodeURIComponent(keyword)}&filtrodatainiciosalvar=${formattedStartDate}&filtrodatafimsalvar=${formattedEndDate}&filtrotodosgrupos=True`;
+      const url = buildCompleteUrl(formattedStartDate, formattedEndDate);
 			const response = await fetch(url);
 			const text = await response.text();
 
