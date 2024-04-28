@@ -13,6 +13,8 @@ import { WithContext as ReactTags } from "react-tag-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
 
+const ITEMS_PER_PAGE = 10;
+
 const KeyCodes = {
 	comma: 188,
 	enter: 13
@@ -42,6 +44,7 @@ export function Chat() {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [results, setResults] = useState([]);
+	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
 		localStorage.setItem("tags", JSON.stringify(tags));
@@ -65,12 +68,24 @@ export function Chat() {
 		setSelectedEndDate(event.target.value);
 	};
 
+	// Calcula o número total de páginas
+	const pageCount = Math.ceil(results.length / ITEMS_PER_PAGE);
+
+	const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+	const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+	const currentResults = results.slice(indexOfFirstItem, indexOfLastItem);
+
+	// Função para mudar de página
+	const handlePageChange = pageNumber => {
+		setCurrentPage(pageNumber);
+	};
+
 	const handleSubmit = async event => {
 		event.preventDefault();
 		setIsLoading(true);
 
-		// Separa as palavras-chave por espaços e remove espaços extras.
 		const keywords = tags.map(tag => tag.text);
+
 		const formattedStartDate = selectedStartDate.split("-").join("");
 		const formattedEndDate = selectedEndDate.split("-").join("");
 
@@ -94,12 +109,20 @@ export function Chat() {
 				const cards = doc.querySelectorAll(".resultadoBuscaItem");
 
 				const cleanedCards = Array.from(cards).map(card => {
-					const header = card.querySelector(".card-header").innerHTML;
-					const body = card.querySelector(".card-body").innerHTML;
+					const linkElement = card.querySelector(".card-text a");
+					let link = linkElement ? linkElement.getAttribute("href") : "";
+					link = link.startsWith("http")
+						? link
+						: `https://www.imprensaoficial.com.br${link}`;
 
 					return {
-						header: DOMPurify.sanitize(header),
-						body: DOMPurify.sanitize(body)
+						header: DOMPurify.sanitize(
+							card.querySelector(".card-header").innerHTML
+						),
+						body: DOMPurify.sanitize(
+							card.querySelector(".card-body").innerHTML
+						),
+						link: link
 					};
 				});
 
@@ -122,7 +145,7 @@ export function Chat() {
 		<>
 			<Card className="w-[800px]">
 				<CardHeader>
-					<CardTitle>Smart chat</CardTitle>
+					<CardTitle>Busque no diario oficial</CardTitle>
 					<CardDescription>
 						Use os inputs abaixo para procurar por informações e selecionar o
 						intervalo de datas.
@@ -142,11 +165,11 @@ export function Chat() {
 							inputFieldPosition="inline"
 							placeholder="Digite as palavras..."
 							classNames={{
-								tags: "flex flex-wrap gap-1 p-2 border border-gray-300 rounded",
-								tagInput: "flex-1",
-								tag: "bg-blue-400 flex justify-center items-center text-xs text-white rounded px-2 py-1 m-1",
-								remove: "cursor-pointer pl-2 text-white text-sm",
-								tagInputField: "w-full p-1 m-1 border-none text-sm"
+								tags: "flex-wrap gap-2 overflow-auto p-2 border border-gray-300 rounded",
+								tagInput: "w-full flex",
+								tag: "justify-center items-center text-xs text-white bg-blue-500 rounded ml-2 mb-2 px-2 py-1 my-1",
+								remove: "cursor-pointer text-white ml-2",
+								tagInputField: "w-full flex-1 border-none p-1 m-1 text-sm"
 							}}
 						/>
 
@@ -168,8 +191,8 @@ export function Chat() {
 					</form>
 
 					<ScrollArea className="h-[600px] pr-4 w-full">
-						{results.length > 0 &&
-							results.map((result, resultIndex) => (
+						{currentResults.length > 0 &&
+							currentResults.map((result, resultIndex) => (
 								<div key={resultIndex}>
 									{result.cards.map((card, index) => (
 										<div
@@ -209,6 +232,7 @@ export function Chat() {
 												}}
 											>
 												<button
+													onClick={() => (window.location.href = card.link)}
 													style={{
 														backgroundColor: "#006fbb",
 														color: "white",
@@ -228,6 +252,17 @@ export function Chat() {
 								</div>
 							))}
 					</ScrollArea>
+					<div className="flex justify-center items-center my-4">
+						{[...Array(pageCount)].map((_, i) => (
+							<button
+								key={i + 1}
+								onClick={() => handlePageChange(i + 1)}
+								className={`mx-2 p-2 ${currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+							>
+								{i + 1}
+							</button>
+						))}
+					</div>
 				</CardContent>
 			</Card>
 		</>
