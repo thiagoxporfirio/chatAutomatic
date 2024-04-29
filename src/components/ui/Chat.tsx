@@ -15,42 +15,37 @@ import DOMPurify from "dompurify";
 
 const ITEMS_PER_PAGE = 10;
 
-const KeyCodes = {
-	comma: 188,
-	enter: 13
-};
-
-const delimiters = [KeyCodes.comma, KeyCodes.enter];
-
 export function Chat() {
-	const [tags, setTags] = useState(() => {
-		const savedTags = localStorage.getItem("tags");
-		return savedTags ? JSON.parse(savedTags) : [];
-	});
+	const [selectedStartDate, setSelectedStartDate] = useState(
+		new Date().toISOString().split("T")[0]
+	);
+	const [selectedEndDate, setSelectedEndDate] = useState(
+		new Date().toISOString().split("T")[0]
+	);
 
-	const [selectedStartDate, setSelectedStartDate] = useState(() => {
-		return (
-			localStorage.getItem("selectedStartDate") ||
-			new Date().toISOString().split("T")[0]
-		);
-	});
-
-	const [selectedEndDate, setSelectedEndDate] = useState(() => {
-		return (
-			localStorage.getItem("selectedEndDate") ||
-			new Date().toISOString().split("T")[0]
-		);
-	});
-
+	const [tags, setTags] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [results, setResults] = useState([]);
 	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
-		localStorage.setItem("tags", JSON.stringify(tags));
-		localStorage.setItem("selectedStartDate", selectedStartDate);
-		localStorage.setItem("selectedEndDate", selectedEndDate);
-	}, [tags, selectedStartDate, selectedEndDate]);
+		// Verifica se está executando no navegador
+		if (typeof window !== "undefined") {
+			// Recupera tags salvas de localStorage e atualiza o estado
+			const savedTags = localStorage.getItem("tags");
+			if (savedTags) setTags(JSON.parse(savedTags));
+
+			const savedStartDate = localStorage.getItem("selectedStartDate");
+			const savedEndDate = localStorage.getItem("selectedEndDate");
+
+			if (savedStartDate) {
+				setSelectedStartDate(savedStartDate);
+			}
+			if (savedEndDate) {
+				setSelectedEndDate(savedEndDate);
+			}
+		}
+	}, []);
 
 	const handleDelete = i => {
 		setTags(tags.filter((tag, index) => index !== i));
@@ -90,7 +85,7 @@ export function Chat() {
 			return `${parts[2]}/${parts[1]}/${parts[0]}`;
 		};
 
-    const formatDateToBRPonto = date => {
+		const formatDateToBRPonto = date => {
 			const parts = date.split("-");
 			return `${parts[2]}.${parts[1]}.${parts[0]}`;
 		};
@@ -98,9 +93,8 @@ export function Chat() {
 		const formattedStartDateBR = formatDateToBR(selectedStartDate);
 		const formattedEndDateBR = formatDateToBR(selectedEndDate);
 
-    const formattedStartDateBRPonto = formatDateToBRPonto(selectedStartDate);
+		const formattedStartDateBRPonto = formatDateToBRPonto(selectedStartDate);
 		const formattedEndDateBRPonto = formatDateToBRPonto(selectedEndDate);
-
 
 		// Constrói a URL com os parâmetros substituídos
 		const baseUrl =
@@ -110,19 +104,19 @@ export function Chat() {
 			f: "xhitlist",
 			xhitlist_vpc: "100",
 			xhitlist_x: "Advanced",
-      xhitlist_q: `[field 'dc:datapubl':>=${formattedStartDateBRPonto}<=${formattedEndDateBRPonto}](papel)`,
-      filtrogrupos:
-      "Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
-      xhitlist_mh: "9999",
-      filtrodatafimsalvar: formattedEndDate,
+			xhitlist_q: `[field 'dc:datapubl':>=${formattedStartDateBRPonto}<=${formattedEndDateBRPonto}](papel)`,
+			filtrogrupos:
+				"Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
+			xhitlist_mh: "9999",
+			filtrodatafimsalvar: formattedEndDate,
 			filtroperiodo: `${formattedStartDateBR} a ${formattedEndDateBR}`,
-      filtrodatainiciosalvar: formattedStartDate,
-      xhitlist_hc: "[XML][Kwic,3]",
-      xhitlist_vps: "15",
+			filtrodatainiciosalvar: formattedStartDate,
+			xhitlist_hc: "[XML][Kwic,3]",
+			xhitlist_vps: "15",
 			filtrotodosgrupos: "True",
-      xhitlist_d: "Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
-      filtrotipopalavraschavesalvar: "UP"
-		
+			xhitlist_d:
+				"Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
+			filtrotipopalavraschavesalvar: "UP"
 		});
 
 		// Retorna a URL completa
@@ -195,7 +189,6 @@ export function Chat() {
 							suggestions={[]}
 							handleDelete={handleDelete}
 							handleAddition={handleAddition}
-							delimiters={delimiters}
 							inputFieldPosition="inline"
 							placeholder="Digite as palavras..."
 							classNames={{
