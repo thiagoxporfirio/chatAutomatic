@@ -80,23 +80,49 @@ export function Chat() {
 		setCurrentPage(pageNumber);
 	};
 
-	const buildCompleteUrl = (startDate, endDate) => {
+	const buildCompleteUrl = (startDate, endDate, keyword) => {
 		// Formata as datas para o formato AAAAMMDD
 		const formattedStartDate = startDate.split("-").join("");
 		const formattedEndDate = endDate.split("-").join("");
+
+		const formatDateToBR = date => {
+			const parts = date.split("-");
+			return `${parts[2]}/${parts[1]}/${parts[0]}`;
+		};
+
+    const formatDateToBRPonto = date => {
+			const parts = date.split("-");
+			return `${parts[2]}.${parts[1]}.${parts[0]}`;
+		};
+
+		const formattedStartDateBR = formatDateToBR(selectedStartDate);
+		const formattedEndDateBR = formatDateToBR(selectedEndDate);
+
+    const formattedStartDateBRPonto = formatDateToBRPonto(selectedStartDate);
+		const formattedEndDateBRPonto = formatDateToBRPonto(selectedEndDate);
+
 
 		// Constrói a URL com os parâmetros substituídos
 		const baseUrl =
 			"https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx";
 		const queryParams = new URLSearchParams({
-			filtropalavraschave: tags.map(tag => tag.text).join(","),
+			filtropalavraschave: keyword,
 			f: "xhitlist",
-			xhitlist_vpc: "first",
+			xhitlist_vpc: "100",
 			xhitlist_x: "Advanced",
-      filtrogrupos: "Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
+      xhitlist_q: `[field 'dc:datapubl':>=${formattedStartDateBRPonto}<=${formattedEndDateBRPonto}](papel)`,
+      filtrogrupos:
+      "Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
+      xhitlist_mh: "9999",
+      filtrodatafimsalvar: formattedEndDate,
+			filtroperiodo: `${formattedStartDateBR} a ${formattedEndDateBR}`,
+      filtrodatainiciosalvar: formattedStartDate,
+      xhitlist_hc: "[XML][Kwic,3]",
+      xhitlist_vps: "15",
 			filtrotodosgrupos: "True",
-			filtrodatafimsalvar: formattedEndDate,
-			filtrodatainiciosalvar: formattedStartDate
+      xhitlist_d: "Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
+      filtrotipopalavraschavesalvar: "UP"
+		
 		});
 
 		// Retorna a URL completa
@@ -107,61 +133,46 @@ export function Chat() {
 		event.preventDefault();
 		setIsLoading(true);
 
-		const keywords = tags.map(tag => tag.text);
+		// Armazena todos os resultados de todas as tags
+		let allResultsCombined = [];
 
-		const formattedStartDate = selectedStartDate.split("-").join("");
-		const formattedEndDate = selectedEndDate.split("-").join("");
-
-		const allResultsPromises = keywords.map(async keyword => {
-      const url = buildCompleteUrl(formattedStartDate, formattedEndDate);
+		for (const tag of tags) {
+			const url = buildCompleteUrl(
+				selectedStartDate,
+				selectedEndDate,
+				tag.text
+			);
 			const response = await fetch(url);
 			const text = await response.text();
 
-			return {
-				keyword,
-				text
-			};
-		});
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(text, "text/html");
+			const cards = doc.querySelectorAll(".resultadoBuscaItem");
 
-		try {
-			const allResults = await Promise.all(allResultsPromises);
-
-			const parsedResults = allResults.map(result => {
-				const parser = new DOMParser();
-				const doc = parser.parseFromString(result.text, "text/html");
-				const cards = doc.querySelectorAll(".resultadoBuscaItem");
-
-				const cleanedCards = Array.from(cards).map(card => {
-					const linkElement = card.querySelector(".card-text a");
-					let link = linkElement ? linkElement.getAttribute("href") : "";
-					link = link.startsWith("http")
-						? link
-						: `https://www.imprensaoficial.com.br${link}`;
-
-					return {
-						header: DOMPurify.sanitize(
-							card.querySelector(".card-header").innerHTML
-						),
-						body: DOMPurify.sanitize(
-							card.querySelector(".card-body").innerHTML
-						),
-						link: link
-					};
-				});
+			const cleanedCards = Array.from(cards).map(card => {
+				const linkElement = card.querySelector(".card-text a");
+				let link = linkElement ? linkElement.getAttribute("href") : "";
+				link = link.startsWith("http")
+					? link
+					: `https://www.imprensaoficial.com.br${link}`;
 
 				return {
-					keyword: result.keyword,
-					cards: cleanedCards
+					header: DOMPurify.sanitize(
+						card.querySelector(".card-header").innerHTML
+					),
+					body: DOMPurify.sanitize(card.querySelector(".card-body").innerHTML),
+					link: link
 				};
 			});
 
-			setResults(parsedResults);
-		} catch (error) {
-			console.error("Error fetching results:", error);
-		} finally {
-			setIsLoading(false);
-			console.log("Finished fetching results: ", results);
+			allResultsCombined.push({
+				keyword: tag.text,
+				cards: cleanedCards
+			});
 		}
+
+		setResults(allResultsCombined);
+		setIsLoading(false);
 	};
 
 	return (
