@@ -29,9 +29,7 @@ export function Chat() {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
-		// Verifica se está executando no navegador
 		if (typeof window !== "undefined") {
-			// Recupera tags salvas de localStorage e atualiza o estado
 			const savedTags = localStorage.getItem("tags");
 			if (savedTags) setTags(JSON.parse(savedTags));
 
@@ -127,7 +125,6 @@ export function Chat() {
 		event.preventDefault();
 		setIsLoading(true);
 
-		// Armazena todos os resultados de todas as tags
 		let allResultsCombined = [];
 
 		for (const tag of tags) {
