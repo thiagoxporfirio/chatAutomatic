@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input";
 import { WithContext as ReactTags } from "react-tag-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
+import axios from 'axios';
 
-const ITEMS_PER_PAGE = 10;
 
 export function Chat() {
 	const [selectedStartDate, setSelectedStartDate] = useState(
@@ -45,6 +45,17 @@ export function Chat() {
 		}
 	}, []);
 
+	useEffect(() => {
+		if (currentPage > 1) {
+			// Verifica se não é a primeira carga.
+			handleSubmit();
+		}else if (currentPage <= 1) {
+			// Verifica se não é a primeira carga.
+			handleSubmit();
+		}
+		
+	}, [currentPage]);
+
 	const handleDelete = i => {
 		setTags(tags.filter((tag, index) => index !== i));
 	};
@@ -61,19 +72,18 @@ export function Chat() {
 		setSelectedEndDate(event.target.value);
 	};
 
-	// Calcula o número total de páginas
-	const pageCount = Math.ceil(results.length / ITEMS_PER_PAGE);
-
-	const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-	const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-	const currentResults = results.slice(indexOfFirstItem, indexOfLastItem);
-
-	// Função para mudar de página
 	const handlePageChange = pageNumber => {
-		setCurrentPage(pageNumber);
+		console.log("Mudando para a página: ", pageNumber);
+		setCurrentPage(pageNumber); // Isso agora só atualiza o estado.
 	};
 
-	const buildCompleteUrl = (startDate, endDate, keyword) => {
+	// Para responder ao envio do formulário:
+	const handleFormSubmit = event => {
+		event.preventDefault();
+		handleSubmit();
+	};
+
+	const buildCompleteUrl = (startDate, endDate, keyword, currentPage) => {
 		// Formata as datas para o formato AAAAMMDD
 		const formattedStartDate = startDate.split("-").join("");
 		const formattedEndDate = endDate.split("-").join("");
@@ -95,71 +105,96 @@ export function Chat() {
 		const formattedEndDateBRPonto = formatDateToBRPonto(selectedEndDate);
 
 		// Constrói a URL com os parâmetros substituídos
-		const baseUrl =
-			"https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx";
-		const queryParams = new URLSearchParams({
-			filtropalavraschave: keyword,
-			f: "xhitlist",
-			xhitlist_vpc: "100",
-			xhitlist_x: "Advanced",
-			xhitlist_q: `[field 'dc:datapubl':>=${formattedStartDateBRPonto}<=${formattedEndDateBRPonto}](papel)`,
-			filtrogrupos:
-				"Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
-			xhitlist_mh: "9999",
-			filtrodatafimsalvar: formattedEndDate,
-			filtroperiodo: `${formattedStartDateBR} a ${formattedEndDateBR}`,
-			filtrodatainiciosalvar: formattedStartDate,
-			xhitlist_hc: "[XML][Kwic,3]",
-			xhitlist_vps: "15",
-			filtrotodosgrupos: "True",
-			xhitlist_d:
-				"Todos, Cidade de SP, Editais e Leilões, Empresarial, Executivo, Junta Comercial, DOU-Justiça, Judiciário, DJE, Legislativo, Municipios, OAB, Suplemento, TRT ",
-			filtrotipopalavraschavesalvar: "UP"
-		});
+		const baseUrl = `https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx?filtropalavraschave=${keyword}&f=xhitlist&xhitlist_vpc=${currentPage}&xhitlist_x=Advanced&xhitlist_q=%5bfield+%27dc%3adatapubl%27%3a%3E%3d${formattedStartDateBRPonto}%3C%3d${formattedEndDateBRPonto}%5d(${keyword})&filtrogrupos=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&xhitlist_mh=9999&filtrodatafimsalvar=${formattedEndDate}&filtroperiodo=${formattedStartDateBR}+a+${formattedEndDateBR}&filtrodatainiciosalvar=${formattedStartDate}&filtrogrupossalvar=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&xhitlist_hc=%5bXML%5d%5bKwic%2c3%5d&xhitlist_vps=15&filtrotodosgrupos=True&xhitlist_d=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&filtrotipopalavraschavesalvar=UP&xhitlist_s=&xhitlist_sel=title%3bField%3adc%3atamanho%3bField%3adc%3adatapubl%3bField%3adc%3acaderno%3bitem-bookmark%3bhit-context&xhitlist_xsl=xhitlist.xsl&navigators=`;
 
+		console.log("URL construída: ", baseUrl);
 		// Retorna a URL completa
-		return `${baseUrl}?${queryParams.toString()}`;
+		return `${baseUrl}`;
 	};
 
-	const handleSubmit = async event => {
-		event.preventDefault();
+	const handleSubmit = async () => {
 		setIsLoading(true);
 
+		setResults([]);
 		let allResultsCombined = [];
 
 		for (const tag of tags) {
 			const url = buildCompleteUrl(
 				selectedStartDate,
 				selectedEndDate,
-				tag.text
+				tag.text,
+				currentPage
 			);
-			const response = await fetch(url);
-			const text = await response.text();
 
-			const parser = new DOMParser();
-			const doc = parser.parseFromString(text, "text/html");
-			const cards = doc.querySelectorAll(".resultadoBuscaItem");
+			console.log("URL: ", url);
 
-			const cleanedCards = Array.from(cards).map(card => {
-				const linkElement = card.querySelector(".card-text a");
-				let link = linkElement ? linkElement.getAttribute("href") : "";
-				link = link.startsWith("http")
-					? link
-					: `https://www.imprensaoficial.com.br${link}`;
+			if (currentPage > 1) {
+				const response = await axios.get("http://localhost:3000/fetch-data", {
+					params: {
+						url: url
+					}
+				});
+				
+				const text = await response.data;
+				const parser = new DOMParser();
+				const doc = parser.parseFromString(text, "text/html");
+				const cards = doc.querySelectorAll(".resultadoBuscaItem");
 
-				return {
-					header: DOMPurify.sanitize(
-						card.querySelector(".card-header").innerHTML
-					),
-					body: DOMPurify.sanitize(card.querySelector(".card-body").innerHTML),
-					link: link
-				};
-			});
+				const cleanedCards = Array.from(cards).map(card => {
+					const linkElement = card.querySelector(".card-text a");
+					let link = linkElement ? linkElement.getAttribute("href") : "";
+					link = link.startsWith("http")
+						? link
+						: `https://www.imprensaoficial.com.br${link}`;
 
-			allResultsCombined.push({
-				keyword: tag.text,
-				cards: cleanedCards
-			});
+					return {
+						header: DOMPurify.sanitize(
+							card.querySelector(".card-header").innerHTML
+						),
+						body: DOMPurify.sanitize(
+							card.querySelector(".card-body").innerHTML
+						),
+						link: link
+					};
+				});
+
+				allResultsCombined.push({
+					keyword: tag.text,
+					cards: cleanedCards
+				});
+			} else {
+				const response = await fetch(url);
+				const text = await response.text();
+
+				const parser = new DOMParser();
+				const doc = parser.parseFromString(text, "text/html");
+				const cards = doc.querySelectorAll(".resultadoBuscaItem");
+
+				console.log("cards: ", cards);
+
+				const cleanedCards = Array.from(cards).map(card => {
+					const linkElement = card.querySelector(".card-text a");
+					let link = linkElement ? linkElement.getAttribute("href") : "";
+					link = link.startsWith("http")
+						? link
+						: `https://www.imprensaoficial.com.br${link}`;
+
+					return {
+						header: DOMPurify.sanitize(
+							card.querySelector(".card-header").innerHTML
+						),
+						body: DOMPurify.sanitize(
+							card.querySelector(".card-body").innerHTML
+						),
+						link: link
+					};
+				});
+
+				allResultsCombined.push({
+					keyword: tag.text,
+					cards: cleanedCards
+				});
+			}
 		}
 
 		setResults(allResultsCombined);
@@ -178,7 +213,7 @@ export function Chat() {
 				</CardHeader>
 				<CardContent>
 					<form
-						onSubmit={handleSubmit}
+						onSubmit={handleFormSubmit}
 						className="flex flex-col gap-2 w-full mb-6"
 					>
 						<ReactTags
@@ -215,8 +250,8 @@ export function Chat() {
 					</form>
 
 					<ScrollArea className="h-[600px] pr-4 w-full">
-						{currentResults.length > 0 &&
-							currentResults.map((result, resultIndex) => (
+						{results.length > 0 &&
+							results.map((result, resultIndex) => (
 								<div key={resultIndex}>
 									{result.cards.map((card, index) => (
 										<div
@@ -276,17 +311,26 @@ export function Chat() {
 								</div>
 							))}
 					</ScrollArea>
-					<div className="flex justify-center items-center my-4">
-						{[...Array(pageCount)].map((_, i) => (
-							<button
-								key={i + 1}
-								onClick={() => handlePageChange(i + 1)}
-								className={`mx-2 p-2 ${currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-							>
-								{i + 1}
-							</button>
-						))}
-					</div>
+					{results.length === 0 ? (
+						<p className="text-center text-gray-500 mt-4">
+							Nenhum resultado encontrado.
+						</p>
+					) : (
+						<>
+							{/* Conteúdo e cards dos resultados, se necessário */}
+							<div className="flex justify-center items-center my-4">
+								{[...Array(10)].map((_, i) => (
+									<button
+										key={i + 1}
+										onClick={() => handlePageChange(i + 1)}
+										className={`mx-2 p-2 ${currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+									>
+										{i + 1}
+									</button>
+								))}
+							</div>
+						</>
+					)}
 				</CardContent>
 			</Card>
 		</>
