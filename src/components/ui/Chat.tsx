@@ -14,24 +14,32 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
 import axios from "axios";
 
+const predefinedTags = ["pedra", "papel", "tesoura", "brita"].map(tag => ({ id: tag, text: tag }));
+
 export function Chat() {
 	const [selectedStartDate, setSelectedStartDate] = useState(new Date().toISOString().split("T")[0]);
     const [selectedEndDate, setSelectedEndDate] = useState(new Date().toISOString().split("T")[0]);
-    const [tags, setTags] = useState([]);
+    const [tags, setTags] = useState(predefinedTags);
 	const [isLoading, setIsLoading] = useState(false);
 	const [results, setResults] = useState([]);
 	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
-        // Load data from local storage only on client side
         const loadInitialData = () => {
-            const savedTags = localStorage.getItem("tags");
+
+			const savedTags = JSON.parse(localStorage.getItem("tags")) || [];
+            const uniqueSavedTags = [...new Set([...predefinedTags.map(tag => tag.text), ...savedTags.map(tag => tag.text)])];
+            setTags(uniqueSavedTags.map(tag => ({ id: tag, text: tag })));
+
             const savedStartDate = localStorage.getItem("selectedStartDate");
             const savedEndDate = localStorage.getItem("selectedEndDate");
 
-            if (savedTags) setTags(JSON.parse(savedTags));
-            if (savedStartDate) setSelectedStartDate(savedStartDate);
+           if (savedStartDate) setSelectedStartDate(savedStartDate);
             if (savedEndDate) setSelectedEndDate(savedEndDate);
+
+            if (savedTags.length > 0 && savedStartDate && savedEndDate) {
+                handleSubmit();
+            }
         };
 
         loadInitialData();
@@ -45,7 +53,6 @@ export function Chat() {
     }, [tags, selectedStartDate, selectedEndDate]);
 
     useEffect(() => {
-        // Perform search if on client and all data is loaded
         if (typeof window !== "undefined" && tags.length > 0 && selectedStartDate && selectedEndDate) {
             handleSubmit();
         }
@@ -62,8 +69,11 @@ export function Chat() {
 	}, [currentPage]);
 
 	const handleDelete = i => {
-		setTags(tags.filter((tag, index) => index !== i));
-	};
+        const tagText = tags[i].text;
+        if (!predefinedTags.map(tag => tag.text).includes(tagText)) {
+            setTags(tags.filter((tag, index) => index !== i));
+        }
+    };
 
 	const handleAddition = tag => {
 		setTags([...tags, tag]);
