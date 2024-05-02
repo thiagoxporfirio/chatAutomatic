@@ -12,48 +12,53 @@ import { Input } from "@/components/ui/input";
 import { WithContext as ReactTags } from "react-tag-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
-import axios from 'axios';
-
+import axios from "axios";
 
 export function Chat() {
-	const [selectedStartDate, setSelectedStartDate] = useState(
-		new Date().toISOString().split("T")[0]
-	);
-	const [selectedEndDate, setSelectedEndDate] = useState(
-		new Date().toISOString().split("T")[0]
-	);
-
-	const [tags, setTags] = useState([]);
+	const [selectedStartDate, setSelectedStartDate] = useState(new Date().toISOString().split("T")[0]);
+    const [selectedEndDate, setSelectedEndDate] = useState(new Date().toISOString().split("T")[0]);
+    const [tags, setTags] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [results, setResults] = useState([]);
 	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
-		if (typeof window !== "undefined") {
-			const savedTags = localStorage.getItem("tags");
-			if (savedTags) setTags(JSON.parse(savedTags));
+        // Load data from local storage only on client side
+        const loadInitialData = () => {
+            const savedTags = localStorage.getItem("tags");
+            const savedStartDate = localStorage.getItem("selectedStartDate");
+            const savedEndDate = localStorage.getItem("selectedEndDate");
 
-			const savedStartDate = localStorage.getItem("selectedStartDate");
-			const savedEndDate = localStorage.getItem("selectedEndDate");
+            if (savedTags) setTags(JSON.parse(savedTags));
+            if (savedStartDate) setSelectedStartDate(savedStartDate);
+            if (savedEndDate) setSelectedEndDate(savedEndDate);
+        };
 
-			if (savedStartDate) {
-				setSelectedStartDate(savedStartDate);
-			}
-			if (savedEndDate) {
-				setSelectedEndDate(savedEndDate);
-			}
-		}
-	}, []);
+        loadInitialData();
+    }, []);
+
+    useEffect(() => {
+        // Save to local storage only on updates after initial load
+        localStorage.setItem("tags", JSON.stringify(tags));
+        localStorage.setItem("selectedStartDate", selectedStartDate);
+        localStorage.setItem("selectedEndDate", selectedEndDate);
+    }, [tags, selectedStartDate, selectedEndDate]);
+
+    useEffect(() => {
+        // Perform search if on client and all data is loaded
+        if (typeof window !== "undefined" && tags.length > 0 && selectedStartDate && selectedEndDate) {
+            handleSubmit();
+        }
+    }, [tags, selectedStartDate, selectedEndDate, currentPage]);
 
 	useEffect(() => {
 		if (currentPage > 1) {
 			// Verifica se não é a primeira carga.
 			handleSubmit();
-		}else if (currentPage <= 1) {
+		} else if (currentPage <= 1) {
 			// Verifica se não é a primeira carga.
 			handleSubmit();
 		}
-		
 	}, [currentPage]);
 
 	const handleDelete = i => {
@@ -107,15 +112,16 @@ export function Chat() {
 		// Constrói a URL com os parâmetros substituídos
 		const baseUrl = `https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx?filtropalavraschave=${keyword}&f=xhitlist&xhitlist_vpc=${currentPage}&xhitlist_x=Advanced&xhitlist_q=%5bfield+%27dc%3adatapubl%27%3a%3E%3d${formattedStartDateBRPonto}%3C%3d${formattedEndDateBRPonto}%5d(${keyword})&filtrogrupos=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&xhitlist_mh=9999&filtrodatafimsalvar=${formattedEndDate}&filtroperiodo=${formattedStartDateBR}+a+${formattedEndDateBR}&filtrodatainiciosalvar=${formattedStartDate}&filtrogrupossalvar=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&xhitlist_hc=%5bXML%5d%5bKwic%2c3%5d&xhitlist_vps=15&filtrotodosgrupos=True&xhitlist_d=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&filtrotipopalavraschavesalvar=UP&xhitlist_s=&xhitlist_sel=title%3bField%3adc%3atamanho%3bField%3adc%3adatapubl%3bField%3adc%3acaderno%3bitem-bookmark%3bhit-context&xhitlist_xsl=xhitlist.xsl&navigators=`;
 
-		console.log("URL construída: ", baseUrl);
 		// Retorna a URL completa
 		return `${baseUrl}`;
 	};
 
 	const handleSubmit = async () => {
-		setIsLoading(true);
+		if (!tags.length || !selectedStartDate || !selectedEndDate) return;
 
+		setIsLoading(true);
 		setResults([]);
+		
 		let allResultsCombined = [];
 
 		for (const tag of tags) {
@@ -126,15 +132,13 @@ export function Chat() {
 				currentPage
 			);
 
-			console.log("URL: ", url);
-
 			if (currentPage > 1) {
 				const response = await axios.get("http://localhost:3000/fetch-data", {
 					params: {
 						url: url
 					}
 				});
-				
+
 				const text = await response.data;
 				const parser = new DOMParser();
 				const doc = parser.parseFromString(text, "text/html");
@@ -169,8 +173,6 @@ export function Chat() {
 				const parser = new DOMParser();
 				const doc = parser.parseFromString(text, "text/html");
 				const cards = doc.querySelectorAll(".resultadoBuscaItem");
-
-				console.log("cards: ", cards);
 
 				const cleanedCards = Array.from(cards).map(card => {
 					const linkElement = card.querySelector(".card-text a");
