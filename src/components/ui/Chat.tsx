@@ -143,7 +143,7 @@ export function Chat() {
 			);
 
 			if (currentPage > 1) {
-				const response = await axios.get("http://localhost:3000/fetch-data", {
+				const response = await axios.get("https://backend-automatic.vercel.app/fetch-data", {
 					params: {
 						url: url
 					}
