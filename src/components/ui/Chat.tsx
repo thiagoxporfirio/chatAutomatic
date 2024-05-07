@@ -50,22 +50,25 @@ export function Chat() {
         localStorage.setItem("tags", JSON.stringify(tags));
         localStorage.setItem("selectedStartDate", selectedStartDate);
         localStorage.setItem("selectedEndDate", selectedEndDate);
+
     }, [tags, selectedStartDate, selectedEndDate]);
 
     useEffect(() => {
+
         if (typeof window !== "undefined" && tags.length > 0 && selectedStartDate && selectedEndDate) {
             handleSubmit();
         }
+
     }, [tags, selectedStartDate, selectedEndDate, currentPage]);
 
 	useEffect(() => {
+
 		if (currentPage > 1) {
-			// Verifica se não é a primeira carga.
 			handleSubmit();
 		} else if (currentPage <= 1) {
-			// Verifica se não é a primeira carga.
 			handleSubmit();
 		}
+
 	}, [currentPage]);
 
 	const handleDelete = i => {
@@ -89,7 +92,7 @@ export function Chat() {
 
 	const handlePageChange = pageNumber => {
 		console.log("Mudando para a página: ", pageNumber);
-		setCurrentPage(pageNumber); // Isso agora só atualiza o estado.
+		setCurrentPage(pageNumber);
 	};
 
 	// Para responder ao envio do formulário:
@@ -119,7 +122,6 @@ export function Chat() {
 		const formattedStartDateBRPonto = formatDateToBRPonto(selectedStartDate);
 		const formattedEndDateBRPonto = formatDateToBRPonto(selectedEndDate);
 
-		// Constrói a URL com os parâmetros substituídos
 		const baseUrl = `https://www.imprensaoficial.com.br/DO/BuscaDO2001Resultado_11_3.aspx?filtropalavraschave=${keyword}&f=xhitlist&xhitlist_vpc=${currentPage}&xhitlist_x=Advanced&xhitlist_q=%5bfield+%27dc%3adatapubl%27%3a%3E%3d${formattedStartDateBRPonto}%3C%3d${formattedEndDateBRPonto}%5d(${keyword})&filtrogrupos=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&xhitlist_mh=9999&filtrodatafimsalvar=${formattedEndDate}&filtroperiodo=${formattedStartDateBR}+a+${formattedEndDateBR}&filtrodatainiciosalvar=${formattedStartDate}&filtrogrupossalvar=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&xhitlist_hc=%5bXML%5d%5bKwic%2c3%5d&xhitlist_vps=15&filtrotodosgrupos=True&xhitlist_d=Todos%2c+Cidade+de+SP%2c+Editais+e+Leil%C3%B5es%2c+Empresarial%2c+Executivo%2c+Junta+Comercial%2c+DOU-Justi%C3%A7a%2c+Judici%C3%A1rio%2c+DJE%2c+Legislativo%2c+Municipios%2c+OAB%2c+Suplemento%2c+TRT+&filtrotipopalavraschavesalvar=UP&xhitlist_s=&xhitlist_sel=title%3bField%3adc%3atamanho%3bField%3adc%3adatapubl%3bField%3adc%3acaderno%3bitem-bookmark%3bhit-context&xhitlist_xsl=xhitlist.xsl&navigators=`;
 
 		// Retorna a URL completa
