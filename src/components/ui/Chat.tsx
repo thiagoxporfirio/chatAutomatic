@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
 import axios from "axios";
 
-const predefinedTags = ["pedra", "papel", "tesoura", "brita"].map(tag => ({ id: tag, text: tag }));
+const predefinedTags = ["riuma"].map(tag => ({ id: tag, text: tag }));
 
 export function Chat() {
 	const [selectedStartDate, setSelectedStartDate] = useState(new Date().toISOString().split("T")[0]);
