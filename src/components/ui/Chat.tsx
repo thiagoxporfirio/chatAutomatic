@@ -17,66 +17,74 @@ import axios from "axios";
 const predefinedTags = ["riuma"].map(tag => ({ id: tag, text: tag }));
 
 export function Chat() {
-	const [selectedStartDate, setSelectedStartDate] = useState(new Date().toISOString().split("T")[0]);
-    const [selectedEndDate, setSelectedEndDate] = useState(new Date().toISOString().split("T")[0]);
-    const [tags, setTags] = useState(predefinedTags);
+	const [selectedStartDate, setSelectedStartDate] = useState(
+		new Date().toISOString().split("T")[0]
+	);
+	const [selectedEndDate, setSelectedEndDate] = useState(
+		new Date().toISOString().split("T")[0]
+	);
+	const [tags, setTags] = useState(predefinedTags);
 	const [isLoading, setIsLoading] = useState(false);
 	const [results, setResults] = useState([]);
 	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
-        const loadInitialData = () => {
-
+		const loadInitialData = () => {
 			const savedTags = JSON.parse(localStorage.getItem("tags")) || [];
-            const uniqueSavedTags = [...new Set([...predefinedTags.map(tag => tag.text), ...savedTags.map(tag => tag.text)])];
-            setTags(uniqueSavedTags.map(tag => ({ id: tag, text: tag })));
+			const uniqueSavedTags = [
+				...new Set([
+					...predefinedTags.map(tag => tag.text),
+					...savedTags.map(tag => tag.text)
+				])
+			];
+			setTags(uniqueSavedTags.map(tag => ({ id: tag, text: tag })));
 
-            const savedStartDate = localStorage.getItem("selectedStartDate");
-            const savedEndDate = localStorage.getItem("selectedEndDate");
+			const savedStartDate = localStorage.getItem("selectedStartDate");
+			const savedEndDate = localStorage.getItem("selectedEndDate");
 
-           if (savedStartDate) setSelectedStartDate(savedStartDate);
-            if (savedEndDate) setSelectedEndDate(savedEndDate);
+			if (savedStartDate) setSelectedStartDate(savedStartDate);
+			if (savedEndDate) setSelectedEndDate(savedEndDate);
 
-            if (savedTags.length > 0 && savedStartDate && savedEndDate) {
-                handleSubmit();
-            }
-        };
+			if (savedTags.length > 0 && savedStartDate && savedEndDate) {
+				handleSubmit();
+			}
+		};
 
-        loadInitialData();
-    }, []);
-
-    useEffect(() => {
-        // Save to local storage only on updates after initial load
-        localStorage.setItem("tags", JSON.stringify(tags));
-        localStorage.setItem("selectedStartDate", selectedStartDate);
-        localStorage.setItem("selectedEndDate", selectedEndDate);
-
-    }, [tags, selectedStartDate, selectedEndDate]);
-
-    useEffect(() => {
-
-        if (typeof window !== "undefined" && tags.length > 0 && selectedStartDate && selectedEndDate) {
-            handleSubmit();
-        }
-
-    }, [tags, selectedStartDate, selectedEndDate, currentPage]);
+		loadInitialData();
+	}, []);
 
 	useEffect(() => {
+		// Save to local storage only on updates after initial load
+		localStorage.setItem("tags", JSON.stringify(tags));
+		localStorage.setItem("selectedStartDate", selectedStartDate);
+		localStorage.setItem("selectedEndDate", selectedEndDate);
+	}, [tags, selectedStartDate, selectedEndDate]);
 
+	useEffect(() => {
+		if (
+			typeof window !== "undefined" &&
+			tags.length > 0 &&
+			selectedStartDate &&
+			selectedEndDate
+		) {
+			handleSubmit();
+		}
+	}, [tags, selectedStartDate, selectedEndDate, currentPage]);
+
+	useEffect(() => {
 		if (currentPage > 1) {
 			handleSubmit();
 		} else if (currentPage <= 1) {
 			handleSubmit();
 		}
-
 	}, [currentPage]);
 
 	const handleDelete = i => {
-        const tagText = tags[i].text;
-        if (!predefinedTags.map(tag => tag.text).includes(tagText)) {
-            setTags(tags.filter((tag, index) => index !== i));
-        }
-    };
+		const tagText = tags[i].text;
+		if (!predefinedTags.map(tag => tag.text).includes(tagText)) {
+			setTags(tags.filter((tag, index) => index !== i));
+		}
+	};
 
 	const handleAddition = tag => {
 		setTags([...tags, tag]);
@@ -133,7 +141,7 @@ export function Chat() {
 
 		setIsLoading(true);
 		setResults([]);
-		
+
 		let allResultsCombined = [];
 
 		for (const tag of tags) {
@@ -145,11 +153,14 @@ export function Chat() {
 			);
 
 			if (currentPage > 1) {
-				const response = await axios.get("https://backend-automatic.vercel.app/fetch-data", {
-					params: {
-						url: url
+				const response = await axios.get(
+					"https://backend-automatic.vercel.app/fetch-data",
+					{
+						params: {
+							url: url
+						}
 					}
-				});
+				);
 
 				const text = await response.data;
 				const parser = new DOMParser();
@@ -287,25 +298,12 @@ export function Chat() {
 													justifyContent: "space-between",
 													alignItems: "center"
 												}}
-												dangerouslySetInnerHTML={{ __html: card.header }}
-											></div>
-											<div
-												style={{
-													padding: "16px",
-													backgroundColor: "white"
-												}}
-												dangerouslySetInnerHTML={{ __html: card.body }}
-											></div>
-											<div
-												style={{
-													padding: "12px 16px",
-													backgroundColor: "white",
-													display: "flex",
-													justifyContent: "flex-end"
-												}}
 											>
-												<button
-													onClick={() => (window.location.href = card.link)}
+												<div
+													dangerouslySetInnerHTML={{ __html: card.header }}
+												></div>
+												<a
+													href={card.link}
 													style={{
 														backgroundColor: "#006fbb",
 														color: "white",
@@ -318,8 +316,15 @@ export function Chat() {
 													}}
 												>
 													Certificar
-												</button>
+												</a>
 											</div>
+											<div
+												style={{
+													padding: "16px",
+													backgroundColor: "white"
+												}}
+												dangerouslySetInnerHTML={{ __html: card.body }}
+											></div>
 										</div>
 									))}
 								</div>
